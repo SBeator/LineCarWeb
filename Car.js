@@ -1,4 +1,4 @@
-function Car(playContext, x, y) {   
+function Car(playContext, x, y, playWidth, playWeight) {   
      height = 40;
      width = 20;
 
@@ -8,6 +8,8 @@ function Car(playContext, x, y) {
         this.aDir = 0.5;
         this.x = x;
         this.y = y;
+        this.playWidth = playWidth;
+        this.playWeight = playWeight;
         this.context = playContext;
         this.image = document.createElement("img");
         this.image.setAttribute("src", "car2.png");
@@ -33,7 +35,8 @@ function Car(playContext, x, y) {
     }
 
     this.draw = function () {
-
+        this.context.clearRect(0,0,this.playWidth,this.playWeight);
+        
         this.context.translate(this.x, this.y);
         this.context.rotate(-this.dir);
         this.context.drawImage(this.image, -width/2, -height/2, width, height);
