@@ -1,7 +1,9 @@
-function DrawLine(playground, context, playWidth, playWeight) {   
+function DrawLine(lineCar, playground, context, playWidth, playWeight) {   
 
     this.initialize = function(){
         this.drawing = false;
+        
+        this.lineCar = lineCar;
         this.playground = playground;
         this.context = context;
         this.playWidth = playWidth;
@@ -20,8 +22,9 @@ function DrawLine(playground, context, playWidth, playWeight) {
     this.onMouseDown = function(evt){
         this.drawing = true;
         
-        // this.context.clearRect(0,0,this.playWidth,this.playWeight);
+        this.context.clearRect(0,0,this.playWidth,this.playWeight);
         var point = {x: evt.clientX, y: evt.clientY};
+        this.linePoints = [];
         this.linePoints.push(point);
     }
     
@@ -42,6 +45,7 @@ function DrawLine(playground, context, playWidth, playWeight) {
     
     this.onMouseUp = function(evt){
         this.drawing = false;
+        this.lineCar.runCar(this.linePoints);
     }
     
     this.initialize();
