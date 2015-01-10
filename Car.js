@@ -1,9 +1,11 @@
 function Car(playContext, x, y, playWidth, playWeight) {   
      height = 40;
      width = 20;
+     turnFactor = 1;
 
     this.initialize = function(){
         this.linePoint = [];
+        this.pointIndex = 0;
         
         this.x = x;
         this.y = y;
@@ -26,20 +28,29 @@ function Car(playContext, x, y, playWidth, playWeight) {
     
     this.runLine = function(linePoints){
         this.linePoint = this.filterPoints(linePoints);
-        this.speed = 40;
+        this.speed = 50;
         this.x = this.linePoint[0].x;
         this.y = this.linePoint[0].y;
-        this.dir = this.getDir(this.linePoint, 0);
+        this.dir = this.getLineDir(0);
         
         this.pointIndex = 0;
     }
     
-    this.getDir = function(linePoint, index){
-        var pNext = linePoint.length > index+1 ? linePoint[index+1] : linePoint[index];
-        var pLast = index > 0 ? linePoint[index-1] : linePoint[index];
+    this.filterPoints = function(linePoints){
+        for(var i=1; i< linePoints.length-1; i++){
+            linePoints[i].x = (linePoints[i-1].x + linePoints[i].x + linePoints[i+1].x)/3;
+            linePoints[i].y = (linePoints[i-1].y + linePoints[i].y + linePoints[i+1].y)/3;
+        }
+        
+        return linePoints;
+    }
     
-        var dx = pNext.x - pLast.x;
-        var dy = pNext.y - pLast.y;
+    this.getLineDir = function(index){
+        var pNext = index+1 < this.linePoint.length ? this.linePoint[index+1] : this.linePoint[index];
+        var pThis = index+1 < this.linePoint.length ? this.linePoint[index] : this.linePoint[index-1];
+    
+        var dx = pNext.x - pThis.x;
+        var dy = pNext.y - pThis.y;
         
         var dir;
         if(dy > 0){
@@ -53,13 +64,62 @@ function Car(playContext, x, y, playWidth, playWeight) {
         return dir
     }
     
-    this.filterPoints = function(linePoints){
-        for(var i=1; i< linePoints.length-1; i++){
-            linePoints[i].x = (linePoints[i-1].x + linePoints[i].x + linePoints[i+1].x)/3;
-            linePoints[i].y = (linePoints[i-1].y + linePoints[i].y + linePoints[i+1].y)/3;
+    this.getExpectDir = function(index){   
+    
+        var x = this.x;
+        var y = this.y;
+        var x0 = index+1 < this.linePoint.length ? this.linePoint[index].x : this.linePoint[index-1].x;
+        var y0 = index+1 < this.linePoint.length ? this.linePoint[index].y : this.linePoint[index-1].y;
+        var x1 = index+1 < this.linePoint.length ? this.linePoint[index+1].x : this.linePoint[index].x;
+        var y1 = index+1 < this.linePoint.length ? this.linePoint[index+1].y : this.linePoint[index].y;
+        
+        var xv = x - x0;
+        var yv = y - y0;
+        var xp = x1 - x0;
+        var yp = y1 - y0;
+        
+        // （x, y) 在线上投影的系数
+        var a = (xv*xp + yv*yp) / (xp*xp + yp*yp);
+        
+        // （x, y) 在线上投影点
+        var xn = a*xp + x0;
+        var yn = a*yp + y0;
+        
+        // （x, y) 与线的距离
+        var dis = Math.sqrt((xn - x) * (xn - x) + (yn - y) * (yn - y));
+        
+        // （x, y) 在线的那一侧
+        var g = ((y0-y1) * x + (x1-x0) * y + (x0*y1-x1*y0)) > 0 ? 1 : -1;
+        
+        // 期望的相对车头朝向
+        var rDis = Math.atan(turnFactor * dis * dis) * g;
+        
+        // 期望的车头朝向
+        return this.getLineDir(index) + rDis;
+    }
+    
+    this.accelerationAndTurn = function(){
+        while(!this.isCurrentPointIndex(this.pointIndex)){
+            this.pointIndex++;
         }
         
-        return linePoints;
+        this.dir = this.getExpectDir(this.pointIndex);
+    }
+    
+    this.isCurrentPointIndex = function(index){
+        if(index+1 >= this.linePoint.length){
+            return true;
+        }
+        
+        var x = this.x;
+        var y = this.y;
+        var x0 = this.linePoint[index].x;
+        var y0 = this.linePoint[index].y;
+        var x1 = this.linePoint[index+1].x;
+        var y1 = this.linePoint[index+1].y;
+        
+        // 汽车坐标在当前线段的范围外时返回true
+        return (x - x0) * (x - x1) >= 0 && (y - y0) * (y - y1) >= 0 && (((x - x0) * (x0 - x1) * (y - y0) * (y0 - y1) > 0) || x0 == x1 || y0 == y1);
     }
     
     // var timeCount = 0;
@@ -73,6 +133,10 @@ function Car(playContext, x, y, playWidth, playWeight) {
         this.y += dy;
         
         this.dir += this.aDir * time;
+        
+        if(this.linePoint.length > 2){
+            this.accelerationAndTurn();
+        }
         
         //timeCount += time;
         //if(timeCount > 1){
