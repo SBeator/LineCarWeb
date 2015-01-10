@@ -1,8 +1,9 @@
-function Car(playContext, x, y, playWidth, playWeight) {   
+function Car(playContext, x, y, playWidth, playHeight) {   
      height = 40;
      width = 20;
-     turnFactor = 0.1;
+     turnFactor = 0.5;
      maxADir = 1;
+     
 
     this.initialize = function(){
         this.linePoint = [];
@@ -17,7 +18,7 @@ function Car(playContext, x, y, playWidth, playWeight) {
         this.aDir = 0;
         
         this.playWidth = playWidth;
-        this.playWeight = playWeight;
+        this.playHeight = playHeight;
         this.context = playContext;
         this.image = document.createElement("img");
         this.image.setAttribute("src", "car2.png");
@@ -109,18 +110,26 @@ function Car(playContext, x, y, playWidth, playWeight) {
     }
     
     this.accelerationAndTurn = function(){
+        var success = false;
         if(this.isInCurrentLineShadow(this.pointIndex + 1)){
             this.pointIndex ++ ;
-        } else if(!this.isInCurrentWideRange(this.pointIndex)){
-            this.speed = 0;
-            console.log("out!");
-        }
+            success = true;
+        } else if(this.isInCurrentWideRange(this.pointIndex + 1)){
+            this.pointIndex ++ ;
+            success = true;
+        } 
+        // else {
+           // this.speed = 0;
+           // console.log("out!"); 
+           // return;
+        // }
         
-        var expectDir = this.getExpectDir(this.pointIndex);
+        this.dir = this.getExpectDir(this.pointIndex);
+        // var expectDir = this.getExpectDir(this.pointIndex);
         
-        var turnDir = expectDir - this.dir;
+        // var turnDir = expectDir - this.dir;
         
-        this.aDir = turnDir < this.getMaxADir() ? turnDir : this.getMaxADir();
+        // this.aDir = turnDir < this.getMaxADir() ? turnDir : this.getMaxADir();
         
     }
     
@@ -136,9 +145,11 @@ function Car(playContext, x, y, playWidth, playWeight) {
         var x1 = this.linePoint[index+1].x;
         var y1 = this.linePoint[index+1].y;
         
+        var isOnLinePoint = (x == x0 && y == y0) || (x == x1 && y == y1);
+        
         // 汽车坐标在当前线段的范围外时返回true
         var isOut = (x - x0) * (x - x1) >= 0 && (y - y0) * (y - y1) >= 0 && (((x - x0) * (x0 - x1) * (y - y0) * (y0 - y1) > 0) || x0 == x1 || y0 == y1);
-        return !isOut;
+        return isOnLinePoint || !isOut;
     }
     
     this.isInCurrentLineShadow = function(index){
@@ -193,7 +204,7 @@ function Car(playContext, x, y, playWidth, playWeight) {
     }
 
     this.draw = function () {
-        this.context.clearRect(0,0,this.playWidth,this.playWeight);
+        this.context.clearRect(0,0,this.playWidth,this.playHeight);
         
         this.context.translate(this.x, this.y);
         this.context.rotate(-this.dir);
