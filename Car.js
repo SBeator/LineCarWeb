@@ -1,8 +1,8 @@
 function Car(playContext, x, y, playWidth, playHeight) {   
      height = 40;
      width = 20;
-     turnFactor = 0.005
-;
+     turnFactor = 0.001;
+     speedTurnFactor = 30;
      maxADir = 1;
      
 
@@ -45,10 +45,20 @@ function Car(playContext, x, y, playWidth, playHeight) {
             linePoints[i].y = (linePoints[i-1].y + linePoints[i].y + linePoints[i+1].y)/3;
         }
         
-        for(var i=1; i< linePoints.length-1; i++){
-            linePoints[i].x = (linePoints[i-1].x + linePoints[i].x + linePoints[i+1].x)/3;
-            linePoints[i].y = (linePoints[i-1].y + linePoints[i].y + linePoints[i+1].y)/3;
-        }
+        // for(var i=1; i< linePoints.length-1; i++){
+            // linePoints[i].x = (linePoints[i-1].x + linePoints[i].x + linePoints[i+1].x)/3;
+            // linePoints[i].y = (linePoints[i-1].y + linePoints[i].y + linePoints[i+1].y)/3;
+        // }
+        
+        // for(var i=1; i< linePoints.length-1; i++){
+            // linePoints[i].x = (linePoints[i-1].x + linePoints[i].x + linePoints[i+1].x)/3;
+            // linePoints[i].y = (linePoints[i-1].y + linePoints[i].y + linePoints[i+1].y)/3;
+        // }
+        
+        // for(var i=1; i< linePoints.length-1; i++){
+            // linePoints[i].x = (linePoints[i-1].x + linePoints[i].x + linePoints[i+1].x)/3;
+            // linePoints[i].y = (linePoints[i-1].y + linePoints[i].y + linePoints[i+1].y)/3;
+        // }   
         
         return linePoints;
     }
@@ -100,14 +110,14 @@ function Car(playContext, x, y, playWidth, playHeight) {
         var g = this.isOverLine(x, y, x0, y0, x1, y1);
         
         // 期望的相对车头朝向
-        var rDis = Math.atan(turnFactor * dis * dis) * g;
+        var rDis = Math.atan(turnFactor * dis * dis * dis) * g;
         
         // 期望的车头朝向
         return this.getLineDir(index) + rDis;
     }
     
     this.getMaxADir = function(){
-        return this.speed / 50;
+        return this.speed / speedTurnFactor;
     }
     
     this.accelerationAndTurn = function(){
