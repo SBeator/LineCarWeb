@@ -1,7 +1,8 @@
 function Car(playContext, x, y, playWidth, playHeight) {   
      height = 40;
      width = 20;
-     turnFactor = 0.5;
+     turnFactor = 0.005
+;
      maxADir = 1;
      
 
@@ -96,7 +97,7 @@ function Car(playContext, x, y, playWidth, playHeight) {
         var dis = Math.sqrt((xn - x) * (xn - x) + (yn - y) * (yn - y));
         
         // （x, y) 在线的那一侧
-        var g = ((y0-y1) * x + (x1-x0) * y + (x0*y1-x1*y0)) > 0 ? 1 : -1;
+        var g = this.isOverLine(x, y, x0, y0, x1, y1);
         
         // 期望的相对车头朝向
         var rDis = Math.atan(turnFactor * dis * dis) * g;
@@ -110,27 +111,83 @@ function Car(playContext, x, y, playWidth, playHeight) {
     }
     
     this.accelerationAndTurn = function(){
-        var success = false;
-        if(this.isInCurrentLineShadow(this.pointIndex + 1)){
-            this.pointIndex ++ ;
-            success = true;
-        } else if(this.isInCurrentWideRange(this.pointIndex + 1)){
-            this.pointIndex ++ ;
-            success = true;
-        } 
+        while(this.isOverCurrentSplit(this.pointIndex) && this.pointIndex < this.linePoint.length){
+            this.pointIndex ++;
+        }
+    
+        // var success = false;
+        // if(this.isInCurrentLineShadow(this.pointIndex + 1)){
+            // this.pointIndex ++ ;
+            // success = true;
+        // } else if(this.isInCurrentWideRange(this.pointIndex + 1)){
+            // this.pointIndex ++ ;
+            // success = true;
+        // } 
         // else {
            // this.speed = 0;
            // console.log("out!"); 
            // return;
         // }
         
-        this.dir = this.getExpectDir(this.pointIndex);
-        // var expectDir = this.getExpectDir(this.pointIndex);
+        //this.dir = this.getExpectDir(this.pointIndex);
+        var expectDir = this.getExpectDir(this.pointIndex);
         
-        // var turnDir = expectDir - this.dir;
+        var turnDir = expectDir - this.dir;
         
-        // this.aDir = turnDir < this.getMaxADir() ? turnDir : this.getMaxADir();
+        this.aDir = turnDir < this.getMaxADir() ? turnDir : this.getMaxADir();
         
+    }
+    
+    this.isOverCurrentSplit = function(index){
+        var split = this.getNextSplit(index);
+        
+        var g = this.isOverLine(this.x, this.y, split.p.x, split.p.y, split.p.x + split.v.x, split.p.y + split.v.y);
+        
+        return g < 0;
+    }
+    
+    this.getNextSplit = function(index){
+        if(index >= this.linePoint.length - 2){
+            index = this.linePoint.length - 3;
+        }
+        
+        var x = this.x;
+        var y = this.y;
+        var x0 = this.linePoint[index].x;
+        var y0 = this.linePoint[index].y;
+        var x1 = this.linePoint[index+1].x;
+        var y1 = this.linePoint[index+1].y;
+        var x2 = this.linePoint[index+2].x;
+        var y2 = this.linePoint[index+2].y;
+        
+        var l1 = Math.sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0));
+        var l2 = Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+        
+        var splitX = x0 - (1 + l1 / l2) * x1 + l1 / l2 * x2;
+        var splitY = y0 - (1 + l1 / l2) * y1 + l1 / l2 * y2;
+        
+        var splitLength = Math.sqrt(splitX * splitX + splitY * splitY);
+        if(splitLength < l1){
+            splitX = y0 - y1;
+            splitY = x1 - x0;
+        }else {
+            var g = this.isOverLine(splitX, splitY, x0, y0, x1, y1);
+            
+            if(g == 0){
+                splitX = y0 - y1;
+                splitY = x1 - x0;
+            }else if(g < 0){
+                splitX = -splitX;
+                splitY = -splitY;
+            }
+        }
+        
+        return {p: {x: x1, y: y1}, v: {x: splitX, y: splitY}};
+    }
+    
+    this.isOverLine = function(x, y, x0, y0, x1, y1){
+        var g = ((y0-y1) * x + (x1-x0) * y + (x0*y1-x1*y0));
+        return g > 0 ? 1 : g < 0 ?　-1 : 0;
     }
     
     this.isInCurrentWideRange = function(index){
