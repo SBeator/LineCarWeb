@@ -2,7 +2,7 @@ function Car(playContext, x, y, playWidth, playHeight) {
      height = 40;
      width = 20;
      turnFactor = 0.001;
-     speedTurnFactor = 30;
+     speedTurnFactor = 10;
      maxADir = 1;
      
 
@@ -142,9 +142,16 @@ function Car(playContext, x, y, playWidth, playHeight) {
         //this.dir = this.getExpectDir(this.pointIndex);
         var expectDir = this.getExpectDir(this.pointIndex);
         
-        var turnDir = expectDir - this.dir;
+        var turnDir = this.normalizeDirection(expectDir - this.dir);
         
-        this.aDir = turnDir < this.getMaxADir() ? turnDir : this.getMaxADir();
+        var aDir;
+        if(turnDir < 0){
+            aDir = turnDir > -this.getMaxADir() ? turnDir : -this.getMaxADir();
+        } else {
+            aDir = turnDir < this.getMaxADir() ? turnDir : this.getMaxADir();
+        }
+        
+        this.aDir = aDir;
         
     }
     
@@ -245,6 +252,19 @@ function Car(playContext, x, y, playWidth, playHeight) {
         return onLine;
     }
     
+    // normalize 角度到-Pi ~ Pi
+    this.normalizeDirection = function(dir){
+        var norDir = dir % (2 * Math.PI);
+        
+        if(norDir < -Math.PI){
+            norDir += 2 * Math.PI;
+        } else if (norDir > Math.PI){
+            norDir -= 2 * Math.PI;
+        }
+        
+        return norDir;
+    }
+    
     // var timeCount = 0;
     
     this.move = function(time){
@@ -260,7 +280,7 @@ function Car(playContext, x, y, playWidth, playHeight) {
         this.x += dx;
         this.y += dy;
         
-        this.dir += this.aDir * time;
+        this.dir = this.normalizeDirection(this.dir + this.aDir * time);
         
         
         //timeCount += time;
