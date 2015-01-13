@@ -13,12 +13,17 @@ function LineCar(playgroundId, width, height) {
         this.timeSecend = 0.01;
         
         this.car = new Car(this.carLayerContext, 200, 200, this.width, this.height);
-        this.drawLine = new DrawLine(this.playground, this.drawLayerContext, this.width, this.height);
+        this.drawLine = new DrawLine(this, this.playground, this.drawLayerContext, this.width, this.height);
 
         this.drawBackground();
         
         var _this = this;
         this.intervalNumber = setInterval(function(){ _this.update();} , this.timeSecend * 1000, this);
+    }
+    
+    this.runCar = function(linePoints){
+        
+        this.car.runLine(linePoints);
     }
     
     this.createCanvas = function(className){
