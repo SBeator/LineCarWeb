@@ -2,9 +2,11 @@ function Car(playContext, x, y, playWidth, playHeight) {
      height = 40;
      width = 20;
      turnFactor = 0.001;
-     speedTurnFactor = 10;
-     maxADir = 1;
-     
+     maxADir = 0.6;
+     turnPower = 100;  //转向加速度为power/speed, 最小转向半径为speed^2/turnPower, 
+     straightPower = 100000;
+     maxSpeed = 200;
+     minSpeed = 50;
 
     this.initialize = function(){
         this.linePoint = [];
@@ -31,7 +33,8 @@ function Car(playContext, x, y, playWidth, playHeight) {
     
     this.runLine = function(linePoints){
         this.linePoint = this.filterPoints(linePoints);
-        this.speed = 100;
+    
+        this.speed = 0.1;
         this.x = this.linePoint[0].x;
         this.y = this.linePoint[0].y;
         this.dir = this.getLineDir(0);
@@ -44,6 +47,13 @@ function Car(playContext, x, y, playWidth, playHeight) {
             linePoints[i].x = (linePoints[i-1].x + linePoints[i].x + linePoints[i+1].x)/3;
             linePoints[i].y = (linePoints[i-1].y + linePoints[i].y + linePoints[i+1].y)/3;
         }
+        linePoints.shift();
+        linePoints.shift();
+        linePoints.shift();
+        linePoints.pop();
+        linePoints.pop();
+        linePoints.pop();
+        
         
         // for(var i=1; i< linePoints.length-1; i++){
             // linePoints[i].x = (linePoints[i-1].x + linePoints[i].x + linePoints[i+1].x)/3;
@@ -110,14 +120,16 @@ function Car(playContext, x, y, playWidth, playHeight) {
         var g = this.isOverLine(x, y, x0, y0, x1, y1);
         
         // 期望的相对车头朝向
-        var rDis = Math.atan(turnFactor * dis * dis * dis) * g;
+        var rDis = Math.atan(turnFactor * dis * dis) * g;
         
         // 期望的车头朝向
         return this.getLineDir(index) + rDis;
     }
     
     this.getMaxADir = function(){
-        return this.speed / speedTurnFactor;
+        var aDir = turnPower / this.speed
+        
+        return aDir;
     }
     
     this.accelerationAndTurn = function(){
@@ -142,7 +154,7 @@ function Car(playContext, x, y, playWidth, playHeight) {
         //this.dir = this.getExpectDir(this.pointIndex);
         var expectDir = this.getExpectDir(this.pointIndex);
         
-        var turnDir = this.normalizeDirection(expectDir - this.dir);
+        var turnDir = this.normalizeDirection(expectDir - this.dir) ;
         
         var aDir;
         if(turnDir < 0){
@@ -153,6 +165,18 @@ function Car(playContext, x, y, playWidth, playHeight) {
         
         this.aDir = aDir;
         
+        this.acc = this.getAcceleration(this.speed, this.aDir);
+    }
+    
+    this.getAcceleration = function(speed, aDir){
+        // var acc = 100 * Math.exp(-speed / maxSpeed);
+        
+        // acc = -(1 + acc) * acc / this.getMaxADir() * Math.abs(dir) + acc;
+
+        var turnFactor = straightPower / (maxSpeed - minSpeed);
+        var turnRes = speed > minSpeed ? turnFactor / minSpeed * (speed - minSpeed) * (Math.abs(aDir) * speed / turnPower ) : 0;
+        var acc = straightPower / (minSpeed + speed) -  straightPower / (minSpeed + maxSpeed) - turnRes;
+        return acc;
     }
     
     this.isOverCurrentSplit = function(index){
@@ -281,7 +305,8 @@ function Car(playContext, x, y, playWidth, playHeight) {
         this.y += dy;
         
         this.dir = this.normalizeDirection(this.dir + this.aDir * time);
-        
+        this.speed += this.acc * time;
+        this.speed < 0 ? 0 : this.speed;
         
         //timeCount += time;
         //if(timeCount > 1){
