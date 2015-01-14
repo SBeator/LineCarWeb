@@ -1,7 +1,8 @@
 function Car(playContext, x, y, playWidth, playHeight) {   
      height = 40;
      width = 20;
-     turnFactor = 0.001;
+     roadWidth = 10;
+     turnFactor = 0.0001;
      maxADir = 0.6;
      turnPower = 100;  //转向加速度为power/speed, 最小转向半径为speed^2/turnPower, 
      straightPower = 100000;
@@ -120,10 +121,10 @@ function Car(playContext, x, y, playWidth, playHeight) {
         var g = this.isOverLine(x, y, x0, y0, x1, y1);
         
         // 期望的相对车头朝向
-        var rDis = Math.atan(turnFactor * dis * dis) * g;
+        var rDis = dis > roadWidth ? Math.atan(turnFactor * dis * dis * dis) * g : 0;
         
         // 期望的车头朝向
-        return this.getLineDir(index) + rDis;
+        return { carExpect: this.getLineDir(index) + rDis, relateRoad: rDis};
     }
     
     this.getMaxADir = function(){
@@ -153,8 +154,11 @@ function Car(playContext, x, y, playWidth, playHeight) {
         
         //this.dir = this.getExpectDir(this.pointIndex);
         var expectDir = this.getExpectDir(this.pointIndex);
-        
-        var turnDir = this.normalizeDirection(expectDir - this.dir) ;
+
+        var turnDir = this.normalizeDirection(expectDir.carExpect - this.dir) ;
+        if(expectDir.relateRoad == 0){
+            turnDir *= 2;
+        }
         
         var aDir;
         if(turnDir < 0){
